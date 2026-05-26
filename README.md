@@ -1,16 +1,46 @@
-# React + Vite
+# Local Bazar - Frontend 🛍️
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The web frontend for Local Bazar, a platform connecting local shops with customers. This React application features a beautiful storefront for customers, a management dashboard for shop owners, and dynamic localization support.
 
-Currently, two official plugins are available:
+## 🌟 Features
+- **Modern Storefront:** Browse products, view shop details, and manage your cart.
+- **Vendor Dashboard:** A dedicated space for shop owners to manage products, view analytics, and handle orders.
+- **Responsive Design:** Fully responsive layout built with Tailwind CSS, ensuring a great experience on mobile and desktop.
+- **Localization (i18n):** Multi-language support including English, Tamil, and Hindi.
+- **Real-Time Notifications:** Socket.io integration to listen for live order updates.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🛠️ Tech Stack
+- **Framework:** React.js
+- **Styling:** Tailwind CSS
+- **Routing:** React Router
+- **State Management:** Custom React Context & Hooks
+- **Real-Time:** Socket.io-client
 
-## React Compiler
+## 🚀 Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Prerequisites
+- Node.js (v18+)
+- Local Bazar Backend running locally.
 
-## Expanding the ESLint configuration
+### Installation
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Navigate to the frontend directory.
+2. Install dependencies:
+   ```bash
+   yarn install
+   ```
+3. Ensure the `.env` file is set up to point to the backend API:
+   ```env
+   VITE_API_URL=http://localhost:5000/api/v1
+   ```
+4. Start the development server:
+   ```bash
+   yarn dev
+   ```
+
+## 📁 Project Structure
+- `src/components/` - Reusable UI components grouped by feature (common, dashboard, storefront).
+- `src/pages/` - Top-level page views (Landing, ShopRegister, Checkout, OrderConfirmation, etc.).
+- `src/hooks/` - Custom React hooks (`useAuth`, `useCart`, `useShop`).
+- `src/context/` - Global state providers.
+- `src/i18n/` - Localization JSON files.
