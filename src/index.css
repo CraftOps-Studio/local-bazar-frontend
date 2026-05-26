@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand Saffron CTA colors */
+  --color-primary: #F97316;
+  --color-primary-hover: #EA580C;
+  --color-saffron-50: #FFF7ED;
+  
+  /* Brand Indigo colors */
+  --color-indigo-900: #1E1B4B;
+  --color-indigo-600: #4F46E5;
+  --color-indigo-50: #EEF2FF;
+
+  /* Neutral shades */
+  --color-neutral-900: #111827;
+  --color-neutral-600: #374151;
+  --color-neutral-400: #9CA3AF;
+  --color-neutral-200: #E5E7EB;
+  --color-neutral-50: #FAFAFA;
+
+  /* Semantic feedback */
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+  --color-info: #3B82F6;
+  
+  --color-brand-bg: #071630;
+  --color-brand-surface: #0a1e3f;
+  --color-brand-surface-2: #122543;
+  --color-brand-border: rgba(255, 255, 255, 0.08);
+  --color-brand-text: #e8e8f0;
+  --color-brand-muted: #94a3b8;
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom scrollbars and scroll behaviors */
+html, body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-text);
+  font-family: var(--font-sans);
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utility classes using vanilla CSS */
+.glass {
+  background: rgba(19, 19, 26, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-hover {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-hover:hover {
+  background: rgba(19, 19, 26, 0.85);
+  border-color: rgba(124, 92, 252, 0.3);
+  box-shadow: 0 0 20px rgba(124, 92, 252, 0.15);
+}
+
+/* Hide scrollbars but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
