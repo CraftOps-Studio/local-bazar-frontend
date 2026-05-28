@@ -265,15 +265,19 @@ const ShopRegister = () => {
             </div>
           </div>
 
-          {/* Action button */}
-          <Button
-            type="submit"
-            variant="primary"
-            loading={loading}
-            className="w-full mt-4 py-3.5 rounded-2xl shadow-xl shadow-primary/20 text-sm"
-          >
-            🚀 Publish My Showroom
-          </Button>
+          <div className="flex flex-col gap-2 mt-4">
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+              className="w-full py-3.5 rounded-2xl shadow-xl shadow-primary/20 text-sm"
+            >
+              🚀 Submit for Approval
+            </Button>
+            <p className="text-center text-[10px] text-brand-muted font-sans px-4">
+              Your shop profile will be sent to a platform administrator for review. Once approved, you can start listing products.
+            </p>
+          </div>
 
         </form>
 
