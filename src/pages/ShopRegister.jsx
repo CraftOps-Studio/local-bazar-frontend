@@ -51,12 +51,13 @@ const ShopRegister = () => {
         description,
         category,
         address: { street, city, state, pincode },
+        location: { type: 'Point', coordinates: [0, 0] }
       };
 
       const res = await apiClient.post('/shops', shopData);
 
       if (res.data?.success) {
-        const shopId = res.data.data._id;
+        const shopId = res.data.data.shop._id;
         
         // 2. Upload Logo if a file is selected
         if (logoFile) {
