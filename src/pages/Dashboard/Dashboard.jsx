@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useOutletContext, Link } from 'react-router-dom';
 import { 
   TrendingUp, IndianRupee, ClipboardList, 
-  ShoppingBag, Users, Calendar, ArrowUpRight, Loader2 
+  ShoppingBag, Users, Calendar, ArrowUpRight, Loader2, AlertCircle 
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -174,6 +174,35 @@ const Dashboard = () => {
           <span>Last 7 Days</span>
         </div>
       </div>
+
+      {/* Pending / Rejected Banner */}
+      {shop?.status === 'pending' && (
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 flex items-start gap-4 shadow-lg shadow-yellow-500/5">
+          <div className="bg-yellow-500/20 text-yellow-500 p-2 rounded-xl">
+            <AlertCircle size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-yellow-500">Shop Pending Admin Approval</h3>
+            <p className="text-sm text-yellow-500/80 mt-1">
+              Your shop registration has been received and is currently under review by our platform administrators. You will be able to list products and receive orders once your shop is approved.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {shop?.status === 'rejected' && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 flex items-start gap-4 shadow-lg shadow-red-500/5">
+          <div className="bg-red-500/20 text-red-500 p-2 rounded-xl">
+            <AlertCircle size={24} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-red-500">Shop Registration Rejected</h3>
+            <p className="text-sm text-red-500/80 mt-1">
+              Unfortunately, your shop registration could not be approved at this time. Please contact support for more information.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Premium Stats Grid (Matching screenshot layout) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

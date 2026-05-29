@@ -34,15 +34,31 @@ const AdminShops = () => {
     setError('');
     setSuccess('');
     try {
-      const res = await apiClient.patch(`/shops/${shopId}/verify`, { isVerified: true });
+      const res = await apiClient.patch(`/shops/${shopId}/status`, { status: 'approved' });
       if (res.data?.success) {
-        setSuccess('Shop successfully verified and live!');
-        setShops(shops.map(s => s._id === shopId ? { ...s, isVerified: true } : s));
+        setSuccess('Shop successfully approved and live!');
+        setShops(shops.map(s => s._id === shopId ? { ...s, isVerified: true, status: 'approved' } : s));
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (err) {
-      console.error('Verification failed:', err);
-      setError(err.response?.data?.message || 'Verification patch request failed.');
+      console.error('Approval failed:', err);
+      setError(err.response?.data?.message || 'Approval patch request failed.');
+    }
+  };
+
+  const handleRejectShop = async (shopId) => {
+    setError('');
+    setSuccess('');
+    try {
+      const res = await apiClient.patch(`/shops/${shopId}/status`, { status: 'rejected' });
+      if (res.data?.success) {
+        setSuccess('Shop registration rejected.');
+        setShops(shops.map(s => s._id === shopId ? { ...s, status: 'rejected' } : s));
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (err) {
+      console.error('Rejection failed:', err);
+      setError(err.response?.data?.message || 'Rejection patch request failed.');
     }
   };
 
@@ -180,9 +196,13 @@ const AdminShops = () => {
 
                     {/* Status Badge */}
                     <td className="px-6 py-4.5">
-                      {shop.isVerified ? (
+                      {shop.status === 'approved' ? (
                         <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-emerald-500/20 select-none">
                           <ShieldCheck size={11} /> Verified Live
+                        </span>
+                      ) : shop.status === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-red-500/20 select-none">
+                          <AlertCircle size={11} /> Rejected
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 bg-orange-500/10 text-orange-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-orange-500/20 select-none">
@@ -194,14 +214,23 @@ const AdminShops = () => {
                     {/* Verification Actions */}
                     <td className="px-6 py-4.5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {!shop.isVerified && (
-                          <button
-                            onClick={() => handleVerifyShop(shop._id)}
-                            className="p-2 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/20 text-emerald-400 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wide"
-                            title="Verify Shop"
-                          >
-                            <Check size={12} /> Approve
-                          </button>
+                        {shop.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleRejectShop(shop._id)}
+                              className="p-2 bg-red-500/10 hover:bg-red-500/25 border border-red-500/20 text-red-400 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wide"
+                              title="Reject Shop"
+                            >
+                              Reject
+                            </button>
+                            <button
+                              onClick={() => handleVerifyShop(shop._id)}
+                              className="p-2 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/20 text-emerald-400 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wide"
+                              title="Verify Shop"
+                            >
+                              <Check size={12} /> Approve
+                            </button>
+                          </>
                         )}
                         
                         <button

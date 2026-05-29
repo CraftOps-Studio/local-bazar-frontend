@@ -185,15 +185,22 @@ const Products = () => {
           </p>
         </div>
 
-        <Button 
-          variant="primary" 
-          size="sm" 
-          icon={Plus} 
-          onClick={() => setModalOpen(true)}
-          className="shadow-lg shadow-primary/20"
-        >
-          Add New Product
-        </Button>
+        {shop?.status === 'approved' || shop?.isVerified ? (
+          <Button 
+            variant="primary" 
+            size="sm" 
+            icon={Plus} 
+            onClick={() => setModalOpen(true)}
+            className="shadow-lg shadow-primary/20"
+          >
+            Add New Product
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-3 py-1.5 rounded-lg text-xs font-bold">
+            <AlertTriangle size={14} />
+            Pending Approval
+          </div>
+        )}
       </div>
 
       {/* Products list grid table wrapper */}
