@@ -13,11 +13,13 @@ import Storefront from '../pages/Storefront';
 import Cart from '../pages/Cart';
 import Checkout from '../pages/Checkout';
 import CustomerOrders from '../pages/Orders';
+import Profile from '../pages/Profile';
 
 // Auth Page Imports
 import Login from '../pages/Login';
 import Signup from '../pages/Signup';
 import ShopRegister from '../pages/ShopRegister';
+import ActivateSeller from '../pages/ActivateSeller';
 import { useAuth } from '../context/AuthContext';
 
 // Dashboard Page Imports
@@ -53,23 +55,18 @@ const AppRoutes = () => {
         <Route path="cart" element={<Cart />} />
         <Route path="checkout" element={<Checkout />} />
         <Route path="orders" element={<ProtectedRoute><CustomerOrders /></ProtectedRoute>} />
+        <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       </Route>
 
       {/* ─── AUTHENTICATION PORTAL ROUTING ─── */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/activate-seller" element={<ActivateSeller />} />
       </Route>
 
       {/* ─── SHOP OWNER REGISTRATION GATEWAY ─── */}
-      <Route 
-        path="/shop-register" 
-        element={
-          <ProtectedRoute>
-            <ShopRegister />
-          </ProtectedRoute>
-        } 
-      />
+      <Route path="/shop-register" element={<ShopRegister />} />
 
       {/* ─── PROTECTED ADMIN/SELLER DASHBOARDS ROUTING ─── */}
       <Route 

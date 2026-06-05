@@ -53,6 +53,14 @@ export const AuthProvider = ({ children }) => {
       }
       return { success: false, message: 'Invalid server response' };
     } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.data?.unverified) {
+        return { 
+          success: false, 
+          unverified: true, 
+          email: err.response?.data?.data?.email,
+          message: err.response?.data?.message 
+        };
+      }
       return { 
         success: false, 
         message: err.response?.data?.message || 'Login failed. Please verify credentials.' 
@@ -73,13 +81,7 @@ export const AuthProvider = ({ children }) => {
         role,
       });
       if (res.data?.success) {
-        const { token: userToken, user: userData } = res.data.data;
-        localStorage.setItem('token', userToken);
-        localStorage.setItem('roleMode', userData.role);
-        setToken(userToken);
-        setUser(userData);
-        setRoleMode(userData.role);
-        return { success: true };
+        return { success: true, email: res.data.data.email };
       }
       return { success: false, message: 'Registration failed' };
     } catch (err) {
@@ -89,6 +91,39 @@ export const AuthProvider = ({ children }) => {
       };
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyEmail = async (email, otp) => {
+    setLoading(true);
+    try {
+      const res = await apiClient.post('/auth/verify-email', { email, otp });
+      if (res.data?.success) {
+        const { token: userToken, user: userData } = res.data.data;
+        localStorage.setItem('token', userToken);
+        localStorage.setItem('roleMode', userData.role);
+        setToken(userToken);
+        setUser(userData);
+        setRoleMode(userData.role);
+        return { success: true, user: userData };
+      }
+      return { success: false, message: 'Verification failed.' };
+    } catch (err) {
+      return { 
+        success: false, 
+        message: err.response?.data?.message || 'Verification failed. Please check OTP code.' 
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async (email) => {
+    try {
+      const res = await apiClient.post('/auth/resend-verification-otp', { email });
+      return { success: !!res.data?.success, message: res.data?.message };
+    } catch (err) {
+      return { success: false, message: err.response?.data?.message || 'Failed to resend code.' };
     }
   };
 
@@ -133,14 +168,23 @@ export const AuthProvider = ({ children }) => {
     return { success: false };
   };
 
+  // Listen for global auth-expired events dispatched from api.js interceptor
+  useEffect(() => {
+    window.addEventListener('auth-expired', handleLogout);
+    return () => window.removeEventListener('auth-expired', handleLogout);
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         token,
+        setToken,
         loading,
         login: handleLogin,
         register: handleRegister,
+        verifyEmail: handleVerifyEmail,
+        resendOtp: handleResendOtp,
         logout: handleLogout,
         refreshUser,
         roleMode,

@@ -12,27 +12,36 @@ const AdminDashboard = () => {
     pendingShops: 0,
     totalUsers: 0,
     totalProducts: 0,
+    totalRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
   const [recentShops, setRecentShops] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [chartData, setChartData] = useState([]);
 
   useEffect(() => {
     const fetchAdminOverview = async () => {
       setLoading(true);
       try {
-        // Fetch all shops to aggregate metrics
-        const shopsRes = await apiClient.get('/shops');
-        const usersRes = await apiClient.get('/users');
-        const productsRes = await apiClient.get('/products');
+        const [shopsRes, usersRes, productsRes, ordersRes] = await Promise.all([
+          apiClient.get('/shops'),
+          apiClient.get('/users'),
+          apiClient.get('/products'),
+          apiClient.get('/orders'),
+        ]);
 
         const shopsList = shopsRes.data?.data?.shops || [];
         const usersList = usersRes.data?.data?.users || [];
         const productsCount = productsRes.data?.data?.products?.length || 0;
+        const ordersList = ordersRes.data?.data?.orders || [];
 
         const totalShops = shopsList.length;
         const verifiedShops = shopsList.filter(s => s.isVerified).length;
         const pendingShops = totalShops - verifiedShops;
+
+        // Compute real revenue from paid orders
+        const paidOrders = ordersList.filter(o => o.paymentStatus === 'paid' || o.orderStatus === 'delivered');
+        const totalRevenue = paidOrders.reduce((sum, o) => sum + (o.pricing?.total || 0), 0);
 
         setStats({
           totalShops,
@@ -40,9 +49,29 @@ const AdminDashboard = () => {
           pendingShops,
           totalUsers: usersList.length,
           totalProducts: productsCount,
+          totalRevenue,
         });
 
-        // Slice recent 5 items
+        // Build weekly chart from real orders
+        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const weeklyMap = {};
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const dayName = daysOfWeek[d.getDay()];
+          weeklyMap[dayName] = { name: dayName, Revenue: 0, Fees: 0 };
+        }
+        ordersList.forEach(order => {
+          const orderDate = new Date(order.createdAt);
+          const dayName = daysOfWeek[orderDate.getDay()];
+          if (weeklyMap[dayName] && (order.paymentStatus === 'paid' || order.orderStatus === 'delivered')) {
+            const amount = order.pricing?.total || 0;
+            weeklyMap[dayName].Revenue += amount;
+            weeklyMap[dayName].Fees += Math.round(amount * 0.1);
+          }
+        });
+        setChartData(Object.values(weeklyMap));
+
         setRecentShops(shopsList.slice(-5).reverse());
         setRecentUsers(usersList.slice(-5).reverse());
       } catch (err) {
@@ -54,17 +83,6 @@ const AdminDashboard = () => {
 
     fetchAdminOverview();
   }, []);
-
-  // Mock revenue chart showing platforms scale (Platform Commission & Fees)
-  const chartData = [
-    { name: 'Mon', Revenue: 4000, Fees: 400 },
-    { name: 'Tue', Revenue: 7500, Fees: 750 },
-    { name: 'Wed', Revenue: 5100, Fees: 510 },
-    { name: 'Thu', Revenue: 9800, Fees: 980 },
-    { name: 'Fri', Revenue: 12000, Fees: 1200 },
-    { name: 'Sat', Revenue: 15400, Fees: 1540 },
-    { name: 'Sun', Revenue: 18900, Fees: 1890 },
-  ];
 
   if (loading) {
     return (
@@ -143,7 +161,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest select-none">Est. Platform Fees</span>
-            <h3 className="text-2xl font-black text-white mt-1">₹6,870</h3>
+            <h3 className="text-2xl font-black text-white mt-1">₹{Math.round(stats.totalRevenue * 0.1).toLocaleString('en-IN')}</h3>
           </div>
           <p className="text-[10px] text-slate-400 font-semibold mt-1">
             10% flat commission rate

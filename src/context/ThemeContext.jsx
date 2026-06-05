@@ -6,7 +6,7 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     // Default to dark mode for the premium cyber/neon aesthetics
     const saved = localStorage.getItem('theme');
-    return saved ? saved : 'dark';
+    return saved ? saved : 'light';
   });
 
   useEffect(() => {

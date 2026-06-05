@@ -42,9 +42,9 @@ apiClient.interceptors.response.use(
       console.warn('[HTTP Auth] Token expired or invalid (401). Performing auto-logout.');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // If we are in a browser, redirect to login
+      // If we are in a browser, dispatch event to trigger React state cleanup instead of a hard reload
       if (typeof window !== 'undefined') {
-        window.location.href = '/login';
+        window.dispatchEvent(new Event('auth-expired'));
       }
     }
     

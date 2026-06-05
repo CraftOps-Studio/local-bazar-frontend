@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { 
   BarChart3, TrendingUp, IndianRupee, ClipboardList, 
-  ShoppingBag, Users, Loader2, Sparkles, PieChart as PieIcon 
+  ShoppingBag, Users, Loader2, PieChart as PieIcon 
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -12,31 +12,115 @@ import {
 import apiClient from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
+// ─── ADMIN ANALYTICS ─────────────────────────────
 const AdminAnalytics = () => {
   const [metrics, setMetrics] = useState({
-    totalTurnover: 76870,
-    ordersCount: 412,
-    merchantsCount: 14,
-    usersCount: 89,
+    totalTurnover: 0,
+    ordersCount: 0,
+    merchantsCount: 0,
+    usersCount: 0,
   });
-  const [loading, setLoading] = useState(false);
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [categoryDistribution, setCategoryDistribution] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
 
-  // Mock platform wide metrics
-  const monthlyData = [
-    { month: 'Jan', Turnover: 12000, Fees: 1200 },
-    { month: 'Feb', Turnover: 19000, Fees: 1900 },
-    { month: 'Mar', Turnover: 32000, Fees: 3200 },
-    { month: 'Apr', Turnover: 54000, Fees: 5400 },
-    { month: 'May', Turnover: 76870, Fees: 7687 },
-  ];
+  const CHART_COLORS = ['#F97316', '#8B5CF6', '#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
 
-  const categoryDistribution = [
-    { name: 'Grocery', value: 45, color: '#F97316' },
-    { name: 'Handicrafts', value: 20, color: '#8B5CF6' },
-    { name: 'Bakery', value: 15, color: '#3B82F6' },
-    { name: 'Pharmacy', value: 12, color: '#10B981' },
-    { name: 'Clothing', value: 8, color: '#EF4444' },
-  ];
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const [shopsRes, usersRes, productsRes, ordersRes] = await Promise.all([
+          apiClient.get('/shops'),
+          apiClient.get('/users'),
+          apiClient.get('/products'),
+          apiClient.get('/orders'),
+        ]);
+
+        const shopsList = shopsRes.data?.data?.shops || [];
+        const usersList = usersRes.data?.data?.users || [];
+        const productsList = productsRes.data?.data?.products || [];
+        const ordersList = ordersRes.data?.data?.orders || [];
+
+        const paidOrders = ordersList.filter(
+          o => o.paymentStatus === 'paid' || o.orderStatus === 'delivered'
+        );
+        const totalTurnover = paidOrders.reduce((sum, o) => sum + (o.pricing?.total || 0), 0);
+
+        setMetrics({
+          totalTurnover,
+          ordersCount: ordersList.length,
+          merchantsCount: shopsList.filter(s => s.isVerified).length,
+          usersCount: usersList.length,
+        });
+
+        // Build last 5 months chart from real orders
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const now = new Date();
+        const monthlyMap = {};
+        for (let i = 4; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${d.getMonth()}`;
+          monthlyMap[key] = { month: monthNames[d.getMonth()], Turnover: 0, Fees: 0 };
+        }
+        paidOrders.forEach(order => {
+          const d = new Date(order.createdAt);
+          const key = `${d.getFullYear()}-${d.getMonth()}`;
+          if (monthlyMap[key]) {
+            const amount = order.pricing?.total || 0;
+            monthlyMap[key].Turnover += amount;
+            monthlyMap[key].Fees += Math.round(amount * 0.1);
+          }
+        });
+        setMonthlyData(Object.values(monthlyMap));
+
+        // Build category distribution from real products
+        const catCounts = {};
+        productsList.forEach(p => { catCounts[p.category] = (catCounts[p.category] || 0) + 1; });
+        const total = productsList.length || 1;
+        const catDist = Object.entries(catCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 6)
+          .map(([name, count], i) => ({
+            name,
+            value: Math.round((count / total) * 100),
+            color: CHART_COLORS[i % CHART_COLORS.length],
+          }));
+        setCategoryDistribution(catDist);
+
+      } catch (err) {
+        console.error('Failed to load admin analytics:', err.message);
+        setFetchError('Failed to load analytics data. Please check your connection.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, []);
+
+  const topCategory = categoryDistribution[0]?.name || '—';
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 size={28} className="animate-spin text-primary" />
+          <span className="text-xs font-bold text-brand-muted uppercase tracking-widest animate-pulse">
+            Loading Analytics...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <div className="rounded-2xl p-10 text-center glass border border-brand-border">
+        <p className="text-sm font-semibold text-error">{fetchError}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -44,7 +128,7 @@ const AdminAnalytics = () => {
       <div className="border-b border-brand-border/40 pb-4">
         <h2 className="text-xl sm:text-2xl font-black flex items-center gap-2">
           <BarChart3 size={22} className="text-primary" />
-          Platform Insights & Analytics
+          Platform Insights &amp; Analytics
         </h2>
         <p className="text-xs text-brand-muted mt-1 font-sans">
           Deep-dive analysis on overall merchant volume, category splits, and transaction counts.
@@ -53,135 +137,141 @@ const AdminAnalytics = () => {
 
       {/* METRIC GRIDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        
-        {/* Platform Turnover */}
-        <div className="bg-[#0A1E3F] border border-white/5 rounded-3xl p-6 flex flex-col gap-3">
+        <div className="glass rounded-3xl p-6 border border-brand-border flex flex-col gap-3">
           <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center">
             <IndianRupee size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Turnover</span>
-            <h3 className="text-2xl font-black text-white mt-1">₹{metrics.totalTurnover.toLocaleString()}</h3>
+            <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest">Total Turnover</span>
+            <h3 className="text-2xl font-black text-brand-text mt-1">&#8377;{metrics.totalTurnover.toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
-        {/* Total platform commissions */}
-        <div className="bg-[#0A1E3F] border border-white/5 rounded-3xl p-6 flex flex-col gap-3">
+        <div className="glass rounded-3xl p-6 border border-brand-border flex flex-col gap-3">
           <div className="w-10 h-10 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center">
             <TrendingUp size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Commission (10%)</span>
-            <h3 className="text-2xl font-black text-white mt-1">₹{(metrics.totalTurnover * 0.1).toLocaleString()}</h3>
+            <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest">Total Commission (10%)</span>
+            <h3 className="text-2xl font-black text-brand-text mt-1">&#8377;{Math.round(metrics.totalTurnover * 0.1).toLocaleString('en-IN')}</h3>
           </div>
         </div>
 
-        {/* Total Platform Orders */}
-        <div className="bg-[#0A1E3F] border border-white/5 rounded-3xl p-6 flex flex-col gap-3">
+        <div className="glass rounded-3xl p-6 border border-brand-border flex flex-col gap-3">
           <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
             <ClipboardList size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Orders</span>
-            <h3 className="text-2xl font-black text-white mt-1">{metrics.ordersCount}</h3>
+            <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest">Total Orders</span>
+            <h3 className="text-2xl font-black text-brand-text mt-1">{metrics.ordersCount}</h3>
           </div>
         </div>
 
-        {/* Merchants list count */}
-        <div className="bg-[#0A1E3F] border border-white/5 rounded-3xl p-6 flex flex-col gap-3">
+        <div className="glass rounded-3xl p-6 border border-brand-border flex flex-col gap-3">
           <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
             <Users size={18} />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Merchants</span>
-            <h3 className="text-2xl font-black text-white mt-1">{metrics.merchantsCount}</h3>
+            <span className="text-[10px] font-bold text-brand-muted uppercase tracking-widest">Active Merchants</span>
+            <h3 className="text-2xl font-black text-brand-text mt-1">{metrics.merchantsCount}</h3>
           </div>
         </div>
-
       </div>
 
       {/* CHARTS SPLIT LAYOUT */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Growth Bar Chart */}
-        <div className="bg-[#0A1E3F] border border-white/5 rounded-3xl p-6 lg:col-span-2 flex flex-col gap-6">
+        {/* Monthly Bar Chart */}
+        <div className="glass rounded-3xl p-6 lg:col-span-2 flex flex-col gap-6 border border-brand-border">
           <div>
-            <h3 className="font-extrabold text-sm text-white">Monthly Transaction Turnover Volume</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Platform growth parameters mapped against monthly settlement values.</p>
+            <h3 className="font-extrabold text-sm text-brand-text">Monthly Transaction Turnover Volume</h3>
+            <p className="text-[10px] text-brand-muted mt-0.5">Platform growth mapped against monthly settlement values.</p>
           </div>
 
-          <div className="h-64 sm:h-72 w-full font-sans text-[10px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="month" stroke="#94A3B8" fontSize={9} tickLine={false} axisLine={false} />
-                <YAxis stroke="#94A3B8" fontSize={9} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#071630', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                  labelStyle={{ fontWeight: 'bold', color: '#fff' }}
-                />
-                <Legend verticalAlign="top" height={36} iconType="circle" />
-                <Bar dataKey="Turnover" name="Total Sales" fill="#F97316" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Fees" name="Platform Commission" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Category Share Pie Chart */}
-        <div className="bg-[#0A1E3F] border border-white/5 rounded-3xl p-6 lg:col-span-1 flex flex-col gap-6">
-          <div>
-            <h3 className="font-extrabold text-sm text-white">Category Market Share</h3>
-            <p className="text-[10px] text-slate-400 mt-0.5">Distribution of purchases across core platform sectors.</p>
-          </div>
-
-          <div className="h-52 w-full flex items-center justify-center relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {categoryDistribution.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#071630', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '11px' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="absolute flex flex-col items-center justify-center text-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Sector</span>
-              <span className="text-sm font-black text-white mt-0.5">Grocery</span>
+          {monthlyData.every(d => d.Turnover === 0) ? (
+            <div className="h-64 flex items-center justify-center text-xs text-brand-muted font-medium text-center px-4">
+              No revenue recorded yet. Orders will appear here once paid.
             </div>
-          </div>
-
-          {/* Legend Custom */}
-          <div className="flex flex-col gap-2.5 mt-2">
-            {categoryDistribution.map((cat) => (
-              <div key={cat.name} className="flex justify-between items-center text-xs font-semibold text-slate-300 font-sans">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
-                  <span>{cat.name}</span>
-                </div>
-                <span className="text-white font-extrabold">{cat.value}%</span>
-              </div>
-            ))}
-          </div>
-
+          ) : (
+            <div className="h-64 sm:h-72 w-full font-sans text-[10px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} />
+                  <YAxis stroke="var(--text-muted)" fontSize={9} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', color: 'var(--text)' }}
+                    labelStyle={{ fontWeight: 'bold', color: 'var(--text)' }}
+                  />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Bar dataKey="Turnover" name="Total Sales" fill="#F97316" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Fees" name="Platform Commission" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
+        {/* Category Pie Chart */}
+        <div className="glass rounded-3xl p-6 lg:col-span-1 flex flex-col gap-6 border border-brand-border">
+          <div>
+            <h3 className="font-extrabold text-sm text-brand-text">Category Market Share</h3>
+            <p className="text-[10px] text-brand-muted mt-0.5">Distribution across core platform sectors.</p>
+          </div>
+
+          {categoryDistribution.length === 0 ? (
+            <div className="h-52 flex items-center justify-center text-xs text-brand-muted font-medium text-center px-4">
+              No products listed yet. Category data will appear once sellers add items.
+            </div>
+          ) : (
+            <>
+              <div className="h-52 w-full flex items-center justify-center relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryDistribution}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {categoryDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', fontSize: '11px', color: 'var(--text)' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">Top Sector</span>
+                  <span className="text-sm font-black text-brand-text mt-0.5">{topCategory}</span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2.5 mt-2">
+                {categoryDistribution.map((cat) => (
+                  <div key={cat.name} className="flex justify-between items-center text-xs font-semibold text-brand-text font-sans">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: cat.color }} />
+                      <span>{cat.name}</span>
+                    </div>
+                    <span className="text-brand-text font-extrabold">{cat.value}%</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
+// ─── SELLER ANALYTICS ────────────────────────────
 const SellerAnalytics = () => {
   const { shop } = useOutletContext();
   
@@ -328,7 +418,7 @@ const SellerAnalytics = () => {
           </span>
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">Total Earnings</span>
-            <h3 className="text-2xl font-black text-brand-text">₹{totalRevenue.toLocaleString('en-IN')}</h3>
+            <h3 className="text-2xl font-black text-brand-text">&#8377;{totalRevenue.toLocaleString('en-IN')}</h3>
             <span className="text-[10px] text-brand-muted font-sans font-medium">Accumulated revenue</span>
           </div>
         </div>
@@ -340,7 +430,7 @@ const SellerAnalytics = () => {
           </span>
           <div className="flex flex-col gap-0.5">
             <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">Avg Order Value</span>
-            <h3 className="text-2xl font-black text-brand-text">₹{avgOrderValue.toLocaleString('en-IN')}</h3>
+            <h3 className="text-2xl font-black text-brand-text">&#8377;{avgOrderValue.toLocaleString('en-IN')}</h3>
             <span className="text-[10px] text-brand-muted font-sans font-medium">Per successful basket</span>
           </div>
         </div>
@@ -383,30 +473,36 @@ const SellerAnalytics = () => {
             </div>
           </div>
 
-          <div className="h-72 w-full font-sans text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#7c5cfc" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#7c5cfc" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-                <XAxis dataKey="day" stroke="var(--color-brand-muted)" />
-                <YAxis stroke="var(--color-brand-muted)" />
-                <Tooltip
-                  contentStyle={{ 
-                    backgroundColor: 'var(--color-brand-surface)', 
-                    borderColor: 'var(--color-brand-border)',
-                    borderRadius: '16px',
-                    color: 'var(--color-brand-text)'
-                  }} 
-                />
-                <Area type="monotone" dataKey="Sales" stroke="#7c5cfc" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" name="Sales (₹)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {salesTrendData.every(d => d.Sales === 0) ? (
+            <div className="h-72 flex items-center justify-center text-xs text-brand-muted font-sans font-medium">
+              No sales data yet. Orders will appear once paid.
+            </div>
+          ) : (
+            <div className="h-72 w-full font-sans text-xs">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#7c5cfc" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#7c5cfc" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <XAxis dataKey="day" stroke="var(--color-brand-muted)" />
+                  <YAxis stroke="var(--color-brand-muted)" />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: 'var(--color-brand-surface)', 
+                      borderColor: 'var(--color-brand-border)',
+                      borderRadius: '16px',
+                      color: 'var(--color-brand-text)'
+                    }} 
+                  />
+                  <Area type="monotone" dataKey="Sales" stroke="#7c5cfc" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" name="Sales (Rs)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Payment Methods breakdown */}
@@ -465,7 +561,7 @@ const SellerAnalytics = () => {
         {/* Best Selling Products */}
         <div className="glass rounded-3xl border border-brand-border overflow-hidden flex flex-col">
           <div className="px-6 py-5 border-b border-brand-border/40 bg-brand-surface-2/20 flex items-center gap-2">
-            <span className="text-lg">⭐</span>
+            <span className="text-lg">&#11088;</span>
             <div>
               <h3 className="font-extrabold text-sm sm:text-base">Best Selling Products</h3>
               <p className="text-[10px] text-brand-muted font-sans font-medium">Items that generate maximum volume</p>
@@ -500,7 +596,7 @@ const SellerAnalytics = () => {
                         {item.name}
                       </td>
                       <td className="px-6 py-4 text-center font-semibold text-brand-text">{item.sold} units</td>
-                      <td className="px-6 py-4 text-right font-extrabold text-primary">₹{item.revenue.toLocaleString('en-IN')}</td>
+                      <td className="px-6 py-4 text-right font-extrabold text-primary">&#8377;{item.revenue.toLocaleString('en-IN')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -512,7 +608,7 @@ const SellerAnalytics = () => {
         {/* Dynamic Category Coverage */}
         <div className="glass rounded-3xl border border-brand-border overflow-hidden p-6 flex flex-col gap-5">
           <div className="border-b border-brand-border/40 pb-4 flex items-center gap-2">
-            <span className="text-lg">📁</span>
+            <span className="text-lg">&#128193;</span>
             <div>
               <h3 className="font-extrabold text-sm sm:text-base">Catalogue Category Coverage</h3>
               <p className="text-[10px] text-brand-muted font-sans font-medium">Breadth of items across different categories</p>
@@ -532,7 +628,7 @@ const SellerAnalytics = () => {
                 }, {})
               )
                 .sort((a, b) => b[1] - a[1])
-                .map(([catName, count], idx) => {
+                .map(([catName, count]) => {
                   const pct = Math.round((count / products.length) * 100);
                   return (
                     <div key={catName} className="flex flex-col gap-1.5">
@@ -559,6 +655,7 @@ const SellerAnalytics = () => {
   );
 };
 
+// ─── ROUTER ──────────────────────────────────────
 const Analytics = () => {
   const { roleMode } = useAuth();
   if (roleMode === 'admin') {

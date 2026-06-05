@@ -11,25 +11,58 @@ import apiClient from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminSettings = () => {
-  const [platformAnnounce, setPlatformAnnounce] = useState(localStorage.getItem('platformAnnounce') || '🎉 Welcome to Local Bazar - Empowering Swadeshi Artisans and Local Stores!');
-  const [platformFee, setPlatformFee] = useState(localStorage.getItem('platformFee') || '10');
-  const [minPayout, setMinPayout] = useState(localStorage.getItem('minPayout') || '500');
-  const [supportEmail, setSupportEmail] = useState(localStorage.getItem('supportEmail') || 'support@localbazar.com');
+  const [platformAnnounce, setPlatformAnnounce] = useState('');
+  const [platformFee, setPlatformFee] = useState('10');
+  const [minPayout, setMinPayout] = useState('500');
+  const [supportEmail, setSupportEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e) => {
+  // Load from backend on mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setFetchLoading(true);
+        const res = await apiClient.get('/settings');
+        if (res.data?.success) {
+          const s = res.data.data.settings;
+          setPlatformAnnounce(s.announcement || '');
+          setPlatformFee(String(s.platformFeePercent ?? 10));
+          setMinPayout(String(s.minSellerPayout ?? 500));
+          setSupportEmail(s.supportEmail || '');
+        }
+      } catch (err) {
+        setErrorMsg('Failed to load platform settings.');
+      } finally {
+        setFetchLoading(false);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
     setLoading(true);
-    localStorage.setItem('platformAnnounce', platformAnnounce);
-    localStorage.setItem('platformFee', platformFee);
-    localStorage.setItem('minPayout', minPayout);
-    localStorage.setItem('supportEmail', supportEmail);
-    setTimeout(() => {
+    try {
+      const res = await apiClient.put('/settings', {
+        announcement: platformAnnounce,
+        platformFeePercent: Number(platformFee),
+        minSellerPayout: Number(minPayout),
+        supportEmail,
+      });
+      if (res.data?.success) {
+        setSuccessMsg('Platform-wide configurations updated successfully!');
+        setTimeout(() => setSuccessMsg(''), 4000);
+      }
+    } catch (err) {
+      setErrorMsg(err.response?.data?.message || 'Failed to save settings. Please try again.');
+    } finally {
       setLoading(false);
-      setSuccessMsg('Platform-wide configurations updated successfully!');
-      setTimeout(() => setSuccessMsg(''), 3000);
-    }, 800);
+    }
   };
 
   return (
@@ -44,9 +77,23 @@ const AdminSettings = () => {
         </p>
       </div>
 
+      {fetchLoading ? (
+        <div className="flex items-center gap-2 py-10 justify-center text-brand-muted text-xs font-sans">
+          <Loader2 size={16} className="animate-spin text-primary" />
+          Loading platform configuration...
+        </div>
+      ) : null}
+
       {successMsg && (
         <div className="bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-4 text-xs text-emerald-400 font-sans font-semibold animate-fadeIn">
           🎉 {successMsg}
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="bg-rose-500/10 border border-rose-500/25 rounded-2xl p-4 text-xs text-rose-400 font-sans font-semibold flex items-center gap-2 animate-fadeIn">
+          <AlertCircle size={14} className="shrink-0" />
+          {errorMsg}
         </div>
       )}
 

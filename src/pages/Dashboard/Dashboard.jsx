@@ -148,9 +148,9 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] bg-black gap-3">
-        <Loader2 size={32} className="animate-spin text-[#F97316]" />
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider animate-pulse">
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3" style={{ background: 'var(--bg)' }}>
+        <Loader2 size={32} className="animate-spin" style={{ color: '#F97316' }} />
+        <p className="text-xs font-semibold uppercase tracking-wider animate-pulse" style={{ color: 'var(--text-muted)' }}>
           Retrieving Dashboard Metrics...
         </p>
       </div>
@@ -158,19 +158,19 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="flex flex-col gap-8 bg-black text-white min-h-screen">
+    <div className="flex flex-col gap-8 min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       
       {/* Welcome banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gradient-to-r from-[#F97316]/10 to-[#FB923C]/5 border border-[#F97316]/20 rounded-3xl p-6 sm:p-8 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-44 h-44 bg-[#F97316]/10 rounded-full blur-[60px] pointer-events-none" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-3xl p-6 sm:p-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.1) 0%, rgba(251,146,60,0.05) 100%)', border: '1px solid rgba(249,115,22,0.2)' }}>
+        <div className="absolute right-0 top-0 w-44 h-44 rounded-full blur-[60px] pointer-events-none" style={{ background: 'rgba(249,115,22,0.1)' }} />
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white">Welcome Back, {shop?.name || 'Seller'}!</h2>
-          <p className="text-xs text-slate-400 mt-1 font-sans">
+          <h2 className="text-xl sm:text-2xl font-black" style={{ color: 'var(--text)' }}>Welcome Back, {shop?.name || 'Seller'}!</h2>
+          <p className="text-xs mt-1 font-sans" style={{ color: 'var(--text-secondary)' }}>
             Here is your local store summary for the last 7 days. Your listings are fully operational.
           </p>
         </div>
-        <div className="flex items-center gap-1.5 bg-[#121214] border border-white/5 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-300">
-          <Calendar size={14} className="text-[#F97316]" />
+        <div className="flex items-center gap-1.5 border rounded-xl px-4 py-2.5 text-xs font-semibold" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+          <Calendar size={14} style={{ color: '#F97316' }} />
           <span>Last 7 Days</span>
         </div>
       </div>
@@ -210,51 +210,50 @@ const Dashboard = () => {
           const Icon = stat.icon;
           return (
             <div 
-              key={stat.name}
-              className="bg-[#121214] rounded-2xl p-5 sm:p-6 border border-white/5 flex items-center gap-6 group hover:border-[#F97316]/30 transition-all duration-300 shadow-xl"
-            >
-              {/* Large Orange Icon */}
-              <div className="text-[#F97316] shrink-0 group-hover:scale-110 transition-transform duration-300">
-                <Icon size={32} strokeWidth={1.5} />
-              </div>
-              
-              {/* Divider */}
-              <div className="h-12 w-[1px] bg-white/10 shrink-0" />
-              
-              {/* Values */}
-              <div className="flex flex-col min-w-0">
-                <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
-                  {stat.value}
-                </h3>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none mt-0.5">
-                  {stat.name}
-                </span>
-              </div>
+            key={stat.name}
+            className="rounded-2xl p-5 sm:p-6 flex items-center gap-6 group transition-all duration-300 shadow-xl"
+            style={{ background: 'var(--card)', border: '1px solid var(--border)' }}
+          >
+            {/* Large Orange Icon */}
+            <div className="shrink-0 group-hover:scale-110 transition-transform duration-300" style={{ color: '#F97316' }}>
+              <Icon size={32} strokeWidth={1.5} />
             </div>
+            {/* Divider */}
+            <div className="h-12 w-[1px] shrink-0" style={{ background: 'var(--border)' }} />
+            {/* Values */}
+            <div className="flex flex-col min-w-0">
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight truncate" style={{ color: 'var(--text)' }}>
+                {stat.value}
+              </h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider select-none mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {stat.name}
+              </span>
+            </div>
+          </div>
           );
         })}
       </div>
 
       {/* Main Wide Bar Chart (Matching screenshot exactly) */}
-      <div className="bg-[#121214] rounded-3xl p-6 sm:p-8 border border-white/5 flex flex-col gap-6 shadow-2xl">
-        <div className="border-b border-white/5 pb-4">
-          <h3 className="font-extrabold text-sm sm:text-base text-white tracking-wide uppercase text-slate-300">
+      <div className="rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-2xl" style={{ background: 'var(--card)', border: '1px solid var(--border)' }}>
+        <div className="border-b pb-4" style={{ borderColor: 'var(--border)' }}>
+          <h3 className="font-extrabold text-sm sm:text-base uppercase tracking-wide" style={{ color: 'var(--text)' }}>
             {getChartTitleDateRange()}
           </h3>
         </div>
 
         <div className="h-80 w-full font-sans text-xs">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={revenueChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="0" vertical={false} stroke="rgba(255,255,255,0.06)" />
-              <XAxis dataKey="day" stroke="rgba(255,255,255,0.4)" tickLine={false} />
-              <YAxis stroke="rgba(255,255,255,0.4)" tickLine={false} axisLine={false} />
+            <BarChart data={revenueChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="0" vertical={false} stroke="var(--border)" />
+              <XAxis dataKey="day" stroke="var(--text-muted)" tickLine={false} />
+              <YAxis stroke="var(--text-muted)" tickLine={false} axisLine={false} />
               <Tooltip
                 contentStyle={{ 
-                  backgroundColor: '#121214', 
-                  borderColor: 'rgba(255,255,255,0.1)',
+                  backgroundColor: 'var(--card)', 
+                  borderColor: 'var(--border)',
                   borderRadius: '16px',
-                  color: '#ffffff'
+                  color: 'var(--text)'
                 }} 
               />
               <Bar 
@@ -265,7 +264,7 @@ const Dashboard = () => {
                 maxBarSize={60}
                 label={{ 
                   position: 'top', 
-                  fill: '#ffffff', 
+                  fill: 'var(--text)', 
                   fontSize: 10, 
                   fontWeight: 'bold',
                   formatter: (v) => v > 0 ? `₹${v}` : '' 
@@ -277,9 +276,9 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Orders log */}
-      <div className="bg-[#121214] rounded-3xl border border-white/5 overflow-hidden shadow-2xl">
-        <div className="px-6 py-5 border-b border-white/5 bg-[#121214] flex items-center justify-between">
-          <h3 className="font-extrabold text-sm sm:text-base text-white">Incoming Orders</h3>
+      <div className="rounded-3xl border overflow-hidden shadow-2xl" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+        <div className="px-6 py-5 border-b flex items-center justify-between" style={{ background: 'var(--card)', borderColor: 'var(--border)' }}>
+          <h3 className="font-extrabold text-sm sm:text-base" style={{ color: 'var(--text)' }}>Incoming Orders</h3>
           <Link to="/dashboard/orders" className="text-xs font-bold text-[#F97316] hover:underline flex items-center gap-0.5">
             Manage All <ArrowUpRight size={13} />
           </Link>
@@ -287,13 +286,13 @@ const Dashboard = () => {
         
         <div className="overflow-x-auto w-full no-scrollbar">
           {recentOrders.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-xs font-sans">
+            <div className="text-center py-8 text-xs font-sans" style={{ color: 'var(--text-muted)' }}>
               No orders received yet. Share your store link with customers to start selling!
             </div>
           ) : (
             <table className="w-full text-left border-collapse font-sans">
               <thead>
-                <tr className="border-b border-white/5 text-[10px] font-bold text-slate-400 uppercase tracking-wider select-none bg-black/30">
+                <tr className="border-b text-[10px] font-bold uppercase tracking-wider select-none" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)', background: 'var(--surface)' }}>
                   <th className="px-6 py-4">Order ID</th>
                   <th className="px-6 py-4">Customer</th>
                   <th className="px-6 py-4">Products</th>
@@ -302,24 +301,27 @@ const Dashboard = () => {
                   <th className="px-6 py-4">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-xs sm:text-sm">
+              <tbody className="divide-y text-xs sm:text-sm" style={{ borderColor: 'var(--border)' }}>
                 {recentOrders.map((ord) => (
-                  <tr key={ord._id} className="hover:bg-white/[0.02] transition-all">
-                    <td className="px-6 py-4 font-bold text-white">
+                  <tr key={ord._id} className="transition-all" style={{ cursor: 'default' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td className="px-6 py-4 font-bold" style={{ color: 'var(--text)' }}>
                       <Link to={`/dashboard/orders`} className="hover:text-[#F97316] hover:underline">
                         {ord.orderNumber || ord._id.slice(-6).toUpperCase()}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 font-semibold text-slate-200">
+                    <td className="px-6 py-4 font-semibold" style={{ color: 'var(--text-secondary)' }}>
                       {ord.customer?.name || 'Guest User'}
                     </td>
-                    <td className="px-6 py-4 text-slate-400 max-w-[200px] truncate">
+                    <td className="px-6 py-4 max-w-[200px] truncate" style={{ color: 'var(--text-muted)' }}>
                       {ord.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}
                     </td>
                     <td className="px-6 py-4 font-bold text-[#F97316]">
                       ₹{ord.pricing?.total?.toLocaleString('en-IN') || '0'}
                     </td>
-                    <td className="px-6 py-4 text-slate-400 text-xs">
+                    <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-muted)' }}>
                       {formatTimeAgo(ord.createdAt)}
                     </td>
                     <td className="px-6 py-4">

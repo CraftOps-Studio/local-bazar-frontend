@@ -13,14 +13,15 @@ const Button = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-bold rounded-xl outline-none transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
-  
+  const base = 'inline-flex items-center justify-center font-bold rounded-xl outline-none transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]';
+
   const variants = {
-    primary: 'bg-primary hover:bg-primary-hover text-white shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30',
-    secondary: 'bg-brand-surface-2 hover:bg-brand-surface border border-brand-border hover:border-brand-border/80 text-brand-text',
-    outline: 'bg-transparent border border-brand-border hover:border-primary hover:text-primary text-brand-text',
-    danger: 'bg-error hover:bg-rose-600 text-white shadow-md shadow-error/15 hover:shadow-lg',
-    ghost: 'bg-transparent hover:bg-brand-surface-2 text-brand-muted hover:text-brand-text border border-transparent',
+    primary:   'bg-[#F97316] hover:bg-[#EA580C] text-white shadow-[0_4px_14px_rgba(249,115,22,0.30)] hover:shadow-[0_6px_20px_rgba(249,115,22,0.40)]',
+    secondary: 'bg-[var(--surface)] hover:bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text)]',
+    outline:   'bg-transparent border border-[var(--border)] hover:border-[#F97316] hover:text-[#F97316] text-[var(--text)]',
+    danger:    'bg-red-500 hover:bg-red-600 text-white shadow-md',
+    ghost:     'bg-transparent hover:bg-[var(--surface)] text-[var(--text-secondary)] border border-transparent',
+    white:     'bg-white hover:bg-gray-50 border border-[var(--border)] text-[var(--text)] shadow-sm',
   };
 
   const sizes = {
@@ -33,15 +34,12 @@ const Button = ({
     <button
       type={type}
       disabled={disabled || loading}
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
       {...props}
     >
       {loading && <Loader2 size={16} className="animate-spin" />}
-      
       {!loading && Icon && iconPosition === 'left' && <Icon size={size === 'sm' ? 14 : 17} />}
-      
       <span>{children}</span>
-      
       {!loading && Icon && iconPosition === 'right' && <Icon size={size === 'sm' ? 14 : 17} />}
     </button>
   );
