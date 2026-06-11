@@ -139,26 +139,73 @@ const Landing = () => {
   const [productsLoading, setProductsLoading] = useState(true);
   const [addedId, setAddedId] = useState(null);
 
+  // Geolocation states
+  const [locationName, setLocationName] = useState('Anna Nagar, Madurai');
+  const [coords, setCoords] = useState(null);
+  const [locLoading, setLocLoading] = useState(false);
+
   const userName = user?.name?.split(' ')[0] || 'there';
 
-  useEffect(() => {
-    const fetchShops = async () => {
-      try {
-        setShopsLoading(true);
-        const res = await apiClient.get('/shops');
-        if (res.data?.success) {
-          setFeaturedShops(res.data.data.shops?.slice(0, 4) || []);
-        } else {
-          setFeaturedShops([]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch shops:', err.message);
-        setFeaturedShops([]);
-      } finally {
-        setShopsLoading(false);
+  const fetchShops = async (userCoords) => {
+    try {
+      setShopsLoading(true);
+      let endpoint = '/shops';
+      const activeCoords = userCoords || coords;
+      if (activeCoords) {
+        endpoint += `?latitude=${activeCoords.latitude}&longitude=${activeCoords.longitude}&maxDistance=35000`;
       }
-    };
+      const res = await apiClient.get(endpoint);
+      if (res.data?.success) {
+        setFeaturedShops(res.data.data.shops?.slice(0, 4) || []);
+      } else {
+        setFeaturedShops([]);
+      }
+    } catch (err) {
+      console.error('Failed to fetch shops:', err.message);
+      setFeaturedShops([]);
+    } finally {
+      setShopsLoading(false);
+    }
+  };
 
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      fetchShops(null);
+      return;
+    }
+    setLocLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const userCoords = { latitude, longitude };
+        setCoords(userCoords);
+        setLocationName(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          if (data && data.address) {
+            const city = data.address.city || data.address.town || data.address.village || data.address.suburb || '';
+            const state = data.address.state || '';
+            const displayLoc = [city, state].filter(Boolean).join(', ') || 'Current Location';
+            setLocationName(displayLoc);
+          }
+        } catch (err) {
+          console.warn('Reverse geocoding failed', err);
+        }
+
+        fetchShops(userCoords);
+        setLocLoading(false);
+      },
+      (error) => {
+        console.error('Geolocation failed', error);
+        setLocLoading(false);
+        fetchShops(null);
+      }
+    );
+  };
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setProductsLoading(true);
@@ -176,7 +223,7 @@ const Landing = () => {
       }
     };
 
-    fetchShops();
+    detectLocation();
     fetchProducts();
   }, []);
 
@@ -229,8 +276,12 @@ const Landing = () => {
               <h1 className="text-white font-extrabold text-2xl sm:text-3xl mt-1 tracking-tight">
                 {isAuthenticated ? userName : 'Welcome!'}
               </h1>
-              <p className="text-white/80 text-xs mt-1.5 flex items-center gap-1">
-                <MapPin size={12} /> Anna Nagar, Madurai
+              <p 
+                className="text-white/80 text-xs mt-1.5 flex items-center gap-1 cursor-pointer hover:text-white transition-colors"
+                onClick={() => detectLocation()}
+              >
+                <MapPin size={12} /> {locationName}
+                {locLoading && <Loader2 size={12} className="animate-spin" />}
               </p>
             </div>
             <div
